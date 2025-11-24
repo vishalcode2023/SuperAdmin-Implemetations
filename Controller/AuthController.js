@@ -11,23 +11,50 @@ const sendEmail = require("../Config/NodeMailler");
 // SuperAdmin creates a user with auto-generated studentid and password
 const SuperAdminCreateUser = async (req, res) => {
     try {
-        const { email } = req.body;
+        const { 
+            email,
+            fullname,
+            gender,
+            mobileno,
+            prof,
+            fulladdress,
+            startdate,
+            enddate,
+            course,
+            batch
+        } = req.body;
+
         if (!email) return res.status(400).json({ message: "Email is required" });
 
         const existingUser = await User.findOne({ email });
         if (existingUser) return res.status(400).json({ message: "User already exists" });
 
-        // Generate studentid (STU-XXXX)
+        // Generate studentid (EPIX-XXXX)
         const studentid = "EPIX" + crypto.randomBytes(4).toString("hex").toUpperCase();
-        // Generate password (8-char random)
+
+        // Generate password (8 char random)
         const passwordPlain = crypto.randomBytes(4).toString("hex");
         const hashedPassword = await bcrypt.hash(passwordPlain, 10);
 
-        // Create new user
-        const newUser = new User({ email, studentid, password: hashedPassword });
+        // Create new user WITH NEW FIELDS
+        const newUser = new User({
+            email,
+            studentid,
+            password: hashedPassword,
+            fullname,
+            gender,
+            mobileno,
+            prof,
+            fulladdress,
+            startdate,
+            enddate,
+            course,
+            batch
+        });
+
         await newUser.save();
 
-        // Send email to user
+        // Send email
         await sendEmail(
             email,
             "Your Account Credentials",
@@ -39,11 +66,13 @@ const SuperAdminCreateUser = async (req, res) => {
         );
 
         res.status(201).json({ message: "User created successfully and email sent" });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
 
 // User login using studentid and password
 const UserLogin = async (req, res) => {
